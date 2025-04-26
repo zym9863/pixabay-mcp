@@ -4,6 +4,10 @@
 
 A Model Context Protocol server for Pixabay image search
 
+<a href="https://glama.ai/mcp/servers/@zym9863/pixabay-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@zym9863/pixabay-mcp/badge" alt="Pixabay Server MCP server" />
+</a>
+
 This is a TypeScript-based MCP server that provides access to the Pixabay image API. It demonstrates core MCP concepts by providing:
 
 - Tools for searching images on Pixabay
