@@ -42,20 +42,39 @@ npm run watch
 
 ## 安装
 
-1. 将Pixabay API密钥设置为环境变量：
+### 方式1：使用 npx（推荐）
 
-```bash
-# Windows系统
-set PIXABAY_API_KEY=your_api_key_here
-
-# macOS/Linux系统
-export PIXABAY_API_KEY=your_api_key_here
-```
-
-2. 要与Claude Desktop一起使用，添加服务器配置：
+将以下配置添加到Claude Desktop配置文件中：
 
 MacOS系统：`~/Library/Application Support/Claude/claude_desktop_config.json`
 Windows系统：`%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "pixabay-mcp": {
+      "command": "npx",
+      "args": ["pixabay-mcp@latest"],
+      "env": {
+        "PIXABAY_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### 方式2：本地安装
+
+1. 克隆并构建项目：
+
+```bash
+git clone https://github.com/zym9863/pixabay-mcp.git
+cd pixabay-mcp
+npm install
+npm run build
+```
+
+2. 添加服务器配置：
 
 ```json
 {
@@ -69,6 +88,10 @@ Windows系统：`%APPDATA%/Claude/claude_desktop_config.json`
   }
 }
 ```
+
+### API密钥设置
+
+从 [https://pixabay.com/api/docs/](https://pixabay.com/api/docs/) 获取您的Pixabay API密钥，并在上述配置中设置。
 
 ### 调试
 

@@ -1,0 +1,42 @@
+# Source files
+src/
+*.ts
+tsconfig.json
+
+# Development files
+.gitignore
+.npmignore
+
+# Documentation (keep README files)
+# README.md
+# README_zh.md
+
+# Development dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log

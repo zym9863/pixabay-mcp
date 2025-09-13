@@ -1,8 +1,18 @@
 {
   "name": "pixabay-mcp",
-  "version": "0.1.0",
-  "description": "A Model Context Protocol server",
-  "private": true,
+  "version": "0.2.0",
+  "description": "A Model Context Protocol server for Pixabay image search",
+  "author": "zym9863",
+  "license": "MIT",
+  "keywords": ["mcp", "pixabay", "image-search", "model-context-protocol"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zym9863/pixabay-mcp.git"
+  },
+  "homepage": "https://github.com/zym9863/pixabay-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/zym9863/pixabay-mcp/issues"
+  },
   "type": "module",
   "bin": {
     "pixabay-mcp": "./build/index.js"

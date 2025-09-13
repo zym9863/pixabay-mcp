@@ -46,20 +46,39 @@ npm run watch
 
 ## Installation
 
-1. Set up your Pixabay API key as an environment variable:
+### Option 1: Using npx (Recommended)
 
-```bash
-# On Windows
-set PIXABAY_API_KEY=your_api_key_here
-
-# On macOS/Linux
-export PIXABAY_API_KEY=your_api_key_here
-```
-
-2. To use with Claude Desktop, add the server config:
+Add this to your Claude Desktop configuration:
 
 On MacOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "pixabay-mcp": {
+      "command": "npx",
+      "args": ["pixabay-mcp@latest"],
+      "env": {
+        "PIXABAY_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Option 2: Local Installation
+
+1. Clone and build the project:
+
+```bash
+git clone https://github.com/zym9863/pixabay-mcp.git
+cd pixabay-mcp
+npm install
+npm run build
+```
+
+2. Add the server config:
 
 ```json
 {
@@ -73,6 +92,10 @@ On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
   }
 }
 ```
+
+### API Key Setup
+
+Get your Pixabay API key from [https://pixabay.com/api/docs/](https://pixabay.com/api/docs/) and set it in the configuration above.
 
 ### Debugging
 
