@@ -2,16 +2,16 @@
 
 [中文版](README_zh.md)
 
-A Model Context Protocol server for Pixabay image search
+A Model Context Protocol server for Pixabay image and video search
 
 <a href="https://glama.ai/mcp/servers/@zym9863/pixabay-mcp">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@zym9863/pixabay-mcp/badge" alt="Pixabay Server MCP server" />
 </a>
 
-This is a TypeScript-based MCP server that provides access to the Pixabay image API. It demonstrates core MCP concepts by providing:
+This is a TypeScript-based MCP server that provides access to the Pixabay image and video APIs. It demonstrates core MCP concepts by providing:
 
-- Tools for searching images on Pixabay
-- Formatted results with image URLs and metadata
+- Tools for searching images and videos on Pixabay
+- Formatted results with image/video URLs and metadata
 - Error handling for API requests
 
 ## Features
@@ -21,10 +21,14 @@ This is a TypeScript-based MCP server that provides access to the Pixabay image 
   - Takes a search query as required parameter
   - Optional parameters for image type, orientation, and results per page
   - Returns formatted list of image results with URLs
+- `search_pixabay_videos` - Search for videos on Pixabay
+  - Takes a search query as required parameter
+  - Optional parameters for video type, orientation, results per page, and min/max duration filters
+  - Returns formatted list of video results with representative download URLs
 
 ### Configuration
 - Requires a Pixabay API key set as environment variable `PIXABAY_API_KEY`
-- Safe search enabled by default
+- Safe search enabled by default for both image and video requests
 - Error handling for API issues and invalid parameters
 
 ## Development
@@ -95,7 +99,7 @@ npm run build
 
 ### API Key Setup
 
-Get your Pixabay API key from [https://pixabay.com/api/docs/](https://pixabay.com/api/docs/) and set it in the configuration above.
+Get your Pixabay API key from [https://pixabay.com/api/docs/](https://pixabay.com/api/docs/) and set it in the configuration above. The same key grants access to both image and video endpoints.
 
 ### Debugging
 

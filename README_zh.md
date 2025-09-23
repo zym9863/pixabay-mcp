@@ -2,12 +2,12 @@
 
 [English](README.md)
 
-一个用于Pixabay图片搜索的模型上下文协议(MCP)服务器
+一个用于Pixabay图片和视频搜索的模型上下文协议(MCP)服务器
 
-这是一个基于TypeScript的MCP服务器，提供对Pixabay图片API的访问。它通过以下方式展示了MCP的核心概念：
+这是一个基于TypeScript的MCP服务器，提供对Pixabay图片与视频API的访问。它通过以下方式展示了MCP的核心概念：
 
-- 用于在Pixabay上搜索图片的工具
-- 带有图片URL和元数据的格式化结果
+- 用于在Pixabay上搜索图片和视频的工具
+- 带有图片/视频URL和元数据的格式化结果
 - API请求的错误处理
 
 ## 功能特性
@@ -17,11 +17,15 @@
   - 需要搜索查询作为必需参数
   - 可选参数包括图片类型、方向和每页结果数
   - 返回带有URL的格式化图片结果列表
+- `search_pixabay_videos` - 在Pixabay上搜索视频
+  - 需要搜索查询作为必需参数
+  - 可选参数包括视频类型、方向、每页结果数，以及最短/最长时长过滤
+  - 返回带有代表性下载URL的格式化视频结果列表
 
 ### 配置
 - 需要将Pixabay API密钥设置为环境变量 `PIXABAY_API_KEY`
-- 默认启用安全搜索
-- 处理API问题和无效参数的错误
+- 默认对图片和视频请求启用安全搜索
+- 针对API问题和无效参数的错误处理
 
 ## 开发
 
@@ -91,7 +95,7 @@ npm run build
 
 ### API密钥设置
 
-从 [https://pixabay.com/api/docs/](https://pixabay.com/api/docs/) 获取您的Pixabay API密钥，并在上述配置中设置。
+从 [https://pixabay.com/api/docs/](https://pixabay.com/api/docs/) 获取您的Pixabay API密钥，并在上述配置中设置。同一个密钥即可访问图片和视频接口。
 
 ### 调试
 
