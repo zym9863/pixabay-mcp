@@ -2,30 +2,77 @@
 
 [English](README.md)
 
-一个用于Pixabay图片和视频搜索的模型上下文协议(MCP)服务器
+一个用于 Pixabay 图片与视频搜索的 Model Context Protocol (MCP) 服务器，支持参数校验与计划中的结构化结果输出。
 
-这是一个基于TypeScript的MCP服务器，提供对Pixabay图片与视频API的访问。它通过以下方式展示了MCP的核心概念：
-
-- 用于在Pixabay上搜索图片和视频的工具
-- 带有图片/视频URL和元数据的格式化结果
-- API请求的错误处理
+特性概览：
+- 图片 / 视频检索工具（调用 Pixabay 官方 API）
+- 运行时参数校验（枚举、范围、语义校验）
+- 错误日志脱敏（不泄露密钥）
+- 规划中：结构化 JSON payload 便于自动化处理（详见 Roadmap）
 
 ## 功能特性
 
 ### 工具
-- `search_pixabay_images` - 在Pixabay上搜索图片
-  - 需要搜索查询作为必需参数
-  - 可选参数包括图片类型、方向和每页结果数
-  - 返回带有URL的格式化图片结果列表
-- `search_pixabay_videos` - 在Pixabay上搜索视频
-  - 需要搜索查询作为必需参数
-  - 可选参数包括视频类型、方向、每页结果数，以及最短/最长时长过滤
-  - 返回带有代表性下载URL的格式化视频结果列表
+`search_pixabay_images`
+  - 必填：`query` (字符串)
+  - 可选：`image_type` (all|photo|illustration|vector)、`orientation` (all|horizontal|vertical)、`per_page` (3-200)
+  - 返回：当前为可读文本；计划追加结构化 JSON 数组
+
+`search_pixabay_videos`
+  - 必填：`query`
+  - 可选：`video_type` (all|film|animation)、`orientation`、`per_page` (3-200)、`min_duration`、`max_duration`
+  - 返回：文本 + （计划）结构化 JSON，含时长与多分辨率 URL
 
 ### 配置
-- 需要将Pixabay API密钥设置为环境变量 `PIXABAY_API_KEY`
-- 默认对图片和视频请求启用安全搜索
-- 针对API问题和无效参数的错误处理
+环境变量：
+| 名称 | 必填 | 默认 | 描述 |
+| ---- | ---- | ---- | ---- |
+| `PIXABAY_API_KEY` | 是 | - | Pixabay API Key（统一访问图片与视频） |
+| `PIXABAY_TIMEOUT_MS` | 否 | 10000（规划） | 请求超时时间 (ms) |
+| `PIXABAY_RETRY` | 否 | 0（规划） | 瞬时错误重试次数 |
+
+说明：
+- 默认开启安全搜索 (safesearch=true)。
+- 日志不会打印 Key。
+
+## 使用示例
+
+当前（纯文本响应示例）：
+```
+Found 120 images for "cat":
+- cat, pet, animal (User: Alice): https://.../medium1.jpg
+- kitten, cute (User: Bob): https://.../medium2.jpg
+```
+
+规划中的结构化结果（v0.4+）：
+```jsonc
+{
+  "content": [
+    { "type": "text", "text": "Found 120 images for \"cat\":\n- ..." },
+    {
+      "type": "json",
+      "data": {
+        "query": "cat",
+        "totalHits": 120,
+        "page": 1,
+        "perPage": 20,
+        "hits": [
+          { "id": 123, "tags": ["cat","animal"], "user": "Alice", "previewURL": "...", "webformatURL": "...", "largeImageURL": "..." }
+        ]
+      }
+    }
+  ]
+}
+```
+
+规划中的错误响应结构：
+```json
+{
+  "content": [{ "type": "text", "text": "Pixabay API error: 400 ..." }],
+  "isError": true,
+  "metadata": { "status": 400, "code": "UPSTREAM_BAD_REQUEST", "hint": "检查 API Key 或参数" }
+}
+```
 
 ## 开发
 
@@ -34,12 +81,12 @@
 npm install
 ```
 
-构建服务器：
+构建：
 ```bash
 npm run build
 ```
 
-用于自动重新构建的开发模式：
+监听开发：
 ```bash
 npm run watch
 ```
@@ -105,4 +152,22 @@ npm run build
 npm run inspector
 ```
 
-Inspector将提供一个URL，用于在浏览器中访问调试工具。
+Inspector 将提供一个 URL，用于在浏览器中访问调试工具。
+
+## Roadmap（摘要）
+| 版本 | 主题 | 关键内容 |
+| ---- | ---- | ---- |
+| v0.4 | 结构化 & 稳定性 | JSON payload、超时、结构化错误 |
+| v0.5 | 体验 & 分页 | page/order、有限重试、模块化重构、测试 |
+| v0.6 | 多源探索 | 调研 Unsplash / Pexels 抽象层 |
+
+完整优先级与 Backlog 参见 `product.md`。
+
+## 贡献
+待 v0.5 引入测试与模块化后欢迎提交 PR，可先通过 issue 讨论 API 形态建议。
+
+## 许可证
+MIT
+
+## 免责声明
+本项目与 Pixabay 无官方关联，使用时请遵守其服务条款与速率限制。
