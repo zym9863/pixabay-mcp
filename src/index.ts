@@ -14,6 +14,11 @@ import axios from 'axios';
 const API_KEY = process.env.PIXABAY_API_KEY;
 const PIXABAY_API_URL = 'https://pixabay.com/api/';
 const PIXABAY_VIDEO_API_URL = 'https://pixabay.com/api/videos/';
+const IMAGE_TYPE_OPTIONS = ["all", "photo", "illustration", "vector"];
+const ORIENTATION_OPTIONS = ["all", "horizontal", "vertical"];
+const VIDEO_TYPE_OPTIONS = ["all", "film", "animation"];
+const MIN_PER_PAGE = 3;
+const MAX_PER_PAGE = 200;
 
 // Interface for Pixabay API response (simplified)
 interface PixabayImage {
@@ -116,12 +121,146 @@ const isValidVideoSearchArgs = (
   (args.max_duration === undefined || typeof args.max_duration === 'number');
 
 /**
+ * 验证图片检索参数，确保符合 Pixabay API 的要求。
+ */
+function assertValidImageSearchParams(args: { image_type?: string; orientation?: string; per_page?: number }): void {
+  const { image_type, orientation, per_page } = args;
+
+  if (image_type !== undefined && !IMAGE_TYPE_OPTIONS.includes(image_type)) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `image_type 必须是 ${IMAGE_TYPE_OPTIONS.join(', ')} 之一。`
+    );
+  }
+
+  if (orientation !== undefined && !ORIENTATION_OPTIONS.includes(orientation)) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `orientation 必须是 ${ORIENTATION_OPTIONS.join(', ')} 之一。`
+    );
+  }
+
+  if (per_page !== undefined) {
+    if (!Number.isInteger(per_page)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'per_page 必须是整数。'
+      );
+    }
+    if (per_page < MIN_PER_PAGE || per_page > MAX_PER_PAGE) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `per_page 需在 ${MIN_PER_PAGE}-${MAX_PER_PAGE} 范围内。`
+      );
+    }
+  }
+}
+
+/**
+ * 验证视频检索参数，确保符合 Pixabay API 的要求。
+ */
+function assertValidVideoSearchParams(args: {
+  video_type?: string;
+  orientation?: string;
+  per_page?: number;
+  min_duration?: number;
+  max_duration?: number;
+}): void {
+  const { video_type, orientation, per_page, min_duration, max_duration } = args;
+
+  if (video_type !== undefined && !VIDEO_TYPE_OPTIONS.includes(video_type)) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `video_type 必须是 ${VIDEO_TYPE_OPTIONS.join(', ')} 之一。`
+    );
+  }
+
+  if (orientation !== undefined && !ORIENTATION_OPTIONS.includes(orientation)) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      `orientation 必须是 ${ORIENTATION_OPTIONS.join(', ')} 之一。`
+    );
+  }
+
+  if (per_page !== undefined) {
+    if (!Number.isInteger(per_page)) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'per_page 必须是整数。'
+      );
+    }
+    if (per_page < MIN_PER_PAGE || per_page > MAX_PER_PAGE) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `per_page 需在 ${MIN_PER_PAGE}-${MAX_PER_PAGE} 范围内。`
+      );
+    }
+  }
+
+  if (min_duration !== undefined) {
+    if (!Number.isInteger(min_duration) || min_duration < 0) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'min_duration 必须是大于等于 0 的整数。'
+      );
+    }
+  }
+
+  if (max_duration !== undefined) {
+    if (!Number.isInteger(max_duration) || max_duration < 0) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        'max_duration 必须是大于等于 0 的整数。'
+      );
+    }
+  }
+
+  if (
+    min_duration !== undefined &&
+    max_duration !== undefined &&
+    max_duration < min_duration
+  ) {
+    throw new McpError(
+      ErrorCode.InvalidParams,
+      'max_duration 需大于或等于 min_duration。'
+    );
+  }
+}
+
+/**
+ * 输出 Pixabay API 错误日志，避免泄露敏感凭据信息。
+ */
+function logPixabayError(source: 'image' | 'video' | 'server', error: unknown): void {
+  if (axios.isAxiosError(error)) {
+    const responseData = error.response?.data as { message?: string } | undefined;
+    console.error(`[Pixabay ${source} error]`, {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      code: error.code,
+      message: responseData?.message ?? error.message,
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.error(`[Pixabay ${source} error]`, {
+      message: error.message,
+    });
+    return;
+  }
+
+  console.error(`[Pixabay ${source} error]`, {
+    error: String(error),
+  });
+}
+
+/**
  * Create an MCP server for Pixabay.
  */
 const server = new Server(
   {
     name: "pixabay-mcp",
-    version: "0.1.0",
+    version: "0.3.0",
   },
   {
     capabilities: {
@@ -220,7 +359,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 /**
  * Handler for the search_pixabay_images and search_pixabay_videos tools.
  */
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+interface ToolCallRequest {
+  params: {
+    name: string;
+    arguments?: Record<string, unknown>;
+  };
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request: ToolCallRequest) => {
   if (!['search_pixabay_images', 'search_pixabay_videos'].includes(request.params.name)) {
     throw new McpError(
       ErrorCode.MethodNotFound,
@@ -243,6 +389,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         'Invalid search arguments. "query" (string) is required.'
       );
     }
+
+    assertValidImageSearchParams(request.params.arguments);
 
     const { query, image_type = 'all', orientation = 'all', per_page = 20 } = request.params.arguments;
 
@@ -268,7 +416,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // Format the results
-      const resultsText = response.data.hits.map(hit =>
+      const resultsText = response.data.hits.map((hit: PixabayImage) =>
         `- ${hit.tags} (User: ${hit.user}): ${hit.webformatURL}`
       ).join('\n');
 
@@ -279,7 +427,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }]
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       let errorMessage = 'Failed to fetch images from Pixabay.';
       if (axios.isAxiosError(error)) {
         errorMessage = `Pixabay API error: ${error.response?.status} ${error.response?.data?.message || error.message}`;
@@ -290,7 +438,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      console.error("Pixabay MCP Error:", errorMessage, error); // Log the full error server-side
+      logPixabayError('image', error);
       return {
         content: [{
           type: "text",
@@ -309,6 +457,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         'Invalid video search arguments. "query" (string) is required.'
       );
     }
+
+    assertValidVideoSearchParams(request.params.arguments);
 
     const {
       query,
@@ -351,7 +501,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       // 格式化视频搜索结果
-      const resultsText = response.data.hits.map(hit => {
+      const resultsText = response.data.hits.map((hit: PixabayVideo) => {
         const duration = Math.floor(hit.duration);
         const videoUrl = hit.videos.medium?.url || hit.videos.small?.url || hit.videos.tiny?.url || 'No video URL available';
         return `- ${hit.tags} (User: ${hit.user}, Duration: ${duration}s): ${videoUrl}`;
@@ -364,7 +514,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }]
       };
 
-    } catch (error) {
+    } catch (error: unknown) {
       let errorMessage = 'Failed to fetch videos from Pixabay.';
       if (axios.isAxiosError(error)) {
         errorMessage = `Pixabay Video API error: ${error.response?.status} ${error.response?.data?.message || error.message}`;
@@ -374,7 +524,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      console.error("Pixabay Video MCP Error:", errorMessage, error);
+      logPixabayError('video', error);
       return {
         content: [{
           type: "text",
@@ -397,7 +547,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
  */
 async function main() {
   const transport = new StdioServerTransport();
-  server.onerror = (error) => console.error('[MCP Error]', error); // Add basic error logging
+  server.onerror = (error: Error) => logPixabayError('server', error); // Add basic error logging
   process.on('SIGINT', async () => { // Graceful shutdown
       await server.close();
       process.exit(0);
@@ -406,7 +556,8 @@ async function main() {
   console.error('Pixabay MCP server running on stdio'); // Log to stderr so it doesn't interfere with stdout JSON-RPC
 }
 
-main().catch((error) => {
-  console.error("Server failed to start:", error);
+main().catch((error: unknown) => {
+  console.error("Server failed to start.");
+  logPixabayError('server', error);
   process.exit(1);
 });
